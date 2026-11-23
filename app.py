@@ -1,7 +1,10 @@
-
+import streamlit as st
 import random
 
-# 1. 별자리별 행운의 장소와 음식 리스트
+# =================================
+# 1. 별자리별 행운의 장소와 음식
+# =================================
+
 zodiac = {
     "양자리": {
         "장소": ["바다", "공원", "놀이공원"],
@@ -53,48 +56,125 @@ zodiac = {
     }
 }
 
-# 2. 사용자 별자리 입력받기
-user = input("당신의 별자리를 입력하세요: ")
 
-# 3. 별자리 입력 확인
-if user not in zodiac:
-    print("잘못된 별자리입니다. 프로그램을 종료합니다.")
+# =================================
+# 2. 별자리 순위 생성 함수 (def)
+# =================================
 
-else:
-    # 4. 12개 별자리 순위 랜덤 생성
+def make_ranking():
     signs = list(zodiac.keys())
     random.shuffle(signs)
+    return signs
 
-    # 5. 사용자의 별자리 순위 확인
+
+# =================================
+# 3. 사용자 별자리 순위 계산 함수 (def)
+# =================================
+
+def get_rank(user, signs):
     rank = signs.index(user) + 1
+    return rank
 
-    print("\n===== 오늘의 별자리 운세 =====")
-    print(f"당신의 별자리는 {user}입니다!")
-    print(f"오늘의 별자리 운세 순위는 {rank}위입니다!")
 
-    # 6. 행운을 더 높이고 싶은지 질문
-    answer = input("\n당신의 행운을 더 높이시고 싶으신가요? (YES/NO): ")
+# =================================
+# 4. 행운의 장소와 음식 추천 함수 (def)
+# =================================
 
-    # 7. 조건문을 활용한 행운 추천
-    if answer.upper() == "YES":
+def recommend_luck(user):
 
-        print("\n===== 오늘의 행운 추천 =====")
+    recommendations = [
+        ("행운의 장소", zodiac[user]["장소"]),
+        ("행운의 음식", zodiac[user]["음식"])
+    ]
 
-        # 반복문을 이용한 랜덤 추천
-        recommendations = [
-            ("행운의 장소", zodiac[user]["장소"]),
-            ("행운의 음식", zodiac[user]["음식"])
-        ]
+    # for 반복문
+    for name, items in recommendations:
+        lucky_item = random.choice(items)
+        st.write(f"🍀 {name}: **{lucky_item}**")
 
-        for name, items in recommendations:
-            lucky_item = random.choice(items)
-            print(f"오늘의 {name}은(는) {lucky_item}입니다!")
 
-    elif answer.upper() == "NO":
-        print("\n추가 행운 추천은 생략하겠습니다.")
+# =================================
+# 5. Streamlit 화면 구성
+# =================================
 
-    else:
-        print("\nYES 또는 NO로 입력해주세요.")
+st.set_page_config(
+    page_title="오늘의 별자리 운세",
+    page_icon="🔮"
+)
 
-    # 8. 프로그램 마무리
-    print("\n오늘도 화이팅 하세요! 🍀")
+st.title("🔮 오늘의 별자리 운세")
+st.write("나의 별자리로 알아보는 오늘의 행운!")
+
+st.divider()
+
+
+# =================================
+# 6. 사용자 별자리 입력
+# =================================
+
+user = st.selectbox(
+    "당신의 별자리를 선택하세요!",
+    list(zodiac.keys())
+)
+
+
+# =================================
+# 7. 운세 확인 버튼
+# =================================
+
+if st.button("오늘의 운세 확인하기"):
+
+    # 랜덤 순위 생성
+    signs = make_ranking()
+
+    # 사용자 순위 계산
+    rank = get_rank(user, signs)
+
+    # 결과를 session_state에 저장
+    st.session_state["rank"] = rank
+    st.session_state["user"] = user
+    st.session_state["answer_done"] = False
+
+
+# =================================
+# 8. 운세 결과 출력
+# =================================
+
+if "rank" in st.session_state:
+
+    st.divider()
+    st.subheader("🌟 오늘의 운세 결과")
+
+    st.success(
+        f"당신의 별자리는 {st.session_state['user']}입니다!"
+    )
+
+    st.header(
+        f"오늘의 별자리 운세는 {st.session_state['rank']}위입니다!"
+    )
+
+    st.divider()
+
+    # YES / NO 응답
+    answer = st.radio(
+        "당신의 행운을 더 높이시고 싶으신가요?",
+        ["YES", "NO"]
+    )
+
+    if st.button("응답 제출"):
+
+        if answer == "YES":
+
+            st.subheader("✨ 오늘의 행운 추천")
+
+            recommend_luck(st.session_state["user"])
+
+        else:
+
+            st.write("추가 행운 추천은 생략합니다.")
+
+        st.session_state["answer_done"] = True
+
+    # 마무리 문구
+    if st.session_state.get("answer_done", False):
+        st.success("오늘도 화이팅 하세요! 🍀")
